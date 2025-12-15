@@ -238,7 +238,13 @@ export default function Index() {
               overshootRight={false}
               renderRightActions={() => (
                 <RectButton
-                  onPress={() => deleteTodo({ id: item._id })}
+                  onPress={async () => {
+                    try {
+                      await deleteTodo({ id: item._id });
+                    } catch (err: any) {
+                      Alert.alert('Delete failed', String(err?.message ?? err));
+                    }
+                  }}
                   style={{
                     width: 96,
                     height: '100%',

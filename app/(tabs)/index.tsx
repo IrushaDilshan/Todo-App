@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
-import * as Haptics from "expo-haptics";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";
 
@@ -24,10 +23,12 @@ export default function Index() {
   const toggleTodo = useMutation(api.todos.toggleTodo);
   const clearTodos = useMutation(api.todos.clearAllTodos);
   const deleteTodo = useMutation(api.todos.deleteTodo);
-  const [filter, setFilter] = useState<"all" | "active" | "done">("all");
+  const updateTodo = useMutation(api.todos.updateTodo);
 
   const [newText, setNewText] = useState("");
-  const inputRef = useRef<TextInput | null>(null);
+  const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
   const completedCount = useMemo(
     () => (todos ? todos.filter((t) => t.isCompleted).length : 0),
@@ -40,7 +41,6 @@ export default function Index() {
     try {
       await addTodo({ text });
       setNewText("");
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (e) {
       // no-op visual error handling for now
     }
@@ -58,7 +58,6 @@ export default function Index() {
           onPress: async () => {
             try {
               await clearTodos({});
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch (e) {}
           },
         },
@@ -66,12 +65,35 @@ export default function Index() {
     );
   };
 
-  const filteredTodos = useMemo(() => {
-    if (!todos) return [];
-    if (filter === "active") return todos.filter((t) => !t.isCompleted);
-    if (filter === "done") return todos.filter((t) => t.isCompleted);
-    return todos;
-  }, [todos, filter]);
+  const displayTodos = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return todos ?? [];
+    return (todos ?? []).filter((t) => t.text.toLowerCase().includes(q));
+  }, [todos, search]);
+
+  const startEdit = (id: string, currentText: string) => {
+    setEditingId(String(id));
+    setEditText(currentText);
+  };
+
+  const saveEdit = async (id: string) => {
+    const text = editText.trim();
+    if (!text) {
+      setEditingId(null);
+      setEditText("");
+      return;
+    }
+    await updateTodo({ id: id as any, text });
+    setEditingId(null);
+    setEditText("");
+  };
+
+  const confirmDelete = (id: string) => {
+    Alert.alert("Delete todo?", "This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => deleteTodo({ id: id as any }) },
+    ]);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -159,7 +181,6 @@ export default function Index() {
             placeholderTextColor={colors.textMuted}
             value={newText}
             onChangeText={setNewText}
-            ref={(r) => { inputRef.current = r; }}
             onSubmitEditing={handleAdd}
             returnKeyType="done"
             style={{
@@ -187,36 +208,35 @@ export default function Index() {
           </TouchableOpacity>
         </View>
       </View>
-      <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 8, gap: 8 }}>
-        {([
-          { key: 'all', label: 'All' },
-          { key: 'active', label: 'Active' },
-          { key: 'done', label: 'Done' },
-        ] as const).map((f) => {
-          const selected = filter === f.key;
-          return (
-            <TouchableOpacity
-              key={f.key}
-              onPress={() => setFilter(f.key)}
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 999,
-                backgroundColor: selected ? colors.primary : colors.surface,
-                borderWidth: 1,
-                borderColor: selected ? colors.primary : colors.border,
-              }}
-            >
-              <Text style={{ color: selected ? '#fff' : colors.text, fontWeight: '600' }}>{f.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
+
+      {/* Search */}
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: colors.border,
+          marginHorizontal: 16,
+          marginTop: 10,
+          paddingHorizontal: 12,
+        }}
+      >
+        <TextInput
+          placeholder="Search tasks..."
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+          style={{
+            height: 44,
+            color: colors.text,
+          }}
+        />
       </View>
 
       {/* List */}
-      {filteredTodos && filteredTodos.length > 0 ? (
+      {displayTodos && displayTodos.length > 0 ? (
         <FlatList
-          data={filteredTodos}
+          data={displayTodos}
           keyExtractor={(item) => String(item._id)}
           contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
@@ -224,10 +244,7 @@ export default function Index() {
             <Swipeable
               renderRightActions={() => (
                 <TouchableOpacity
-                  onPress={async () => {
-                    await deleteTodo({ id: item._id });
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  }}
+                  onPress={() => confirmDelete(String(item._id))}
                   activeOpacity={0.9}
                   style={{
                     width: 96,
@@ -244,10 +261,7 @@ export default function Index() {
               )}
             >
               <TouchableOpacity
-                onPress={async () => {
-                  await toggleTodo({ id: item._id });
-                  Haptics.selectionAsync();
-                }}
+                onPress={() => toggleTodo({ id: item._id })}
                 activeOpacity={0.9}
                 style={{
                   backgroundColor: colors.surface,
@@ -269,16 +283,48 @@ export default function Index() {
                   size={22}
                   color={item.isCompleted ? colors.success : colors.textMuted}
                 />
-                <Text
-                  style={{
-                    marginLeft: 12,
-                    color: item.isCompleted ? colors.textMuted : colors.text,
-                    textDecorationLine: item.isCompleted ? "line-through" : "none",
-                    fontSize: 16,
-                  }}
-                >
-                  {item.text}
-                </Text>
+                {editingId === String(item._id) ? (
+                  <View style={{ flex: 1, marginLeft: 12, flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                      value={editText}
+                      onChangeText={setEditText}
+                      autoFocus
+                      style={{
+                        flex: 1,
+                        color: colors.text,
+                        backgroundColor: colors.backgrounds.editInput,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: 8,
+                        paddingHorizontal: 8,
+                        paddingVertical: 6,
+                      }}
+                    />
+                    <TouchableOpacity onPress={() => saveEdit(String(item._id))} style={{ marginLeft: 8 }}>
+                      <Feather name="check" size={20} color={colors.success} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => { setEditingId(null); setEditText(""); }} style={{ marginLeft: 8 }}>
+                      <Feather name="x" size={20} color={colors.danger} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <>
+                    <Text
+                      style={{
+                        marginLeft: 12,
+                        color: item.isCompleted ? colors.textMuted : colors.text,
+                        textDecorationLine: item.isCompleted ? "line-through" : "none",
+                        fontSize: 16,
+                        flex: 1,
+                      }}
+                    >
+                      {item.text}
+                    </Text>
+                    <TouchableOpacity onPress={() => startEdit(String(item._id), item.text)}>
+                      <Feather name="edit-2" size={18} color={colors.text} />
+                    </TouchableOpacity>
+                  </>
+                )}
               </TouchableOpacity>
             </Swipeable>
           )}
@@ -296,18 +342,6 @@ export default function Index() {
           <Text style={{ color: colors.textMuted, marginTop: 12, fontSize: 16 }}>
             No tasks yet. Add your first one!
           </Text>
-          <TouchableOpacity
-            onPress={() => inputRef.current?.focus()}
-            style={{
-              marginTop: 14,
-              backgroundColor: colors.primary,
-              paddingHorizontal: 14,
-              paddingVertical: 10,
-              borderRadius: 12,
-            }}
-          >
-            <Text style={{ color: '#fff', fontWeight: '600' }}>Add a task</Text>
-          </TouchableOpacity>
         </View>
       )}
     </SafeAreaView>

@@ -14,14 +14,19 @@ const TabsLayout = () => {
             backgroundColor: colors.background,
             borderTopColor: colors.border,
             borderTopWidth:1,
-            height: 90,
-            paddingBottom: 30,
-            paddingTop: 10,
+            height: 70,
+            paddingBottom: 12,
+            paddingTop: 8,
 
          },
 
+         tabBarItemStyle: {
+            marginHorizontal: 8,
+            borderRadius: 14,
+         },
+
          tabBarLabelStyle: {
-            fontSize: 14,
+            fontSize: 12,
             fontWeight:"600"
          },
          headerShown: false,
@@ -32,17 +37,17 @@ const TabsLayout = () => {
         name="index"
         options={{
           title: 'Todos',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flash-outline" color={color} size={size} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'checkmark-done' : 'checkmark-done-outline'} color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
         name="setting"
         options={{
-          title: 'setting',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" color={color} size={size} />
+          title: 'Settings',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? 'settings' : 'settings-outline'} color={color} size={size} />
           ),
         }}
       />

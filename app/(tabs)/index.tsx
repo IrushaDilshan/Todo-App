@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
+import * as Haptics from "expo-haptics";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";
 
@@ -23,8 +24,10 @@ export default function Index() {
   const toggleTodo = useMutation(api.todos.toggleTodo);
   const clearTodos = useMutation(api.todos.clearAllTodos);
   const deleteTodo = useMutation(api.todos.deleteTodo);
+  const [filter, setFilter] = useState<"all" | "active" | "done">("all");
 
   const [newText, setNewText] = useState("");
+  const inputRef = useRef<TextInput | null>(null);
 
   const completedCount = useMemo(
     () => (todos ? todos.filter((t) => t.isCompleted).length : 0),
@@ -37,6 +40,7 @@ export default function Index() {
     try {
       await addTodo({ text });
       setNewText("");
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (e) {
       // no-op visual error handling for now
     }
@@ -54,12 +58,20 @@ export default function Index() {
           onPress: async () => {
             try {
               await clearTodos({});
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch (e) {}
           },
         },
       ]
     );
   };
+
+  const filteredTodos = useMemo(() => {
+    if (!todos) return [];
+    if (filter === "active") return todos.filter((t) => !t.isCompleted);
+    if (filter === "done") return todos.filter((t) => t.isCompleted);
+    return todos;
+  }, [todos, filter]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -147,6 +159,7 @@ export default function Index() {
             placeholderTextColor={colors.textMuted}
             value={newText}
             onChangeText={setNewText}
+            ref={(r) => { inputRef.current = r; }}
             onSubmitEditing={handleAdd}
             returnKeyType="done"
             style={{
@@ -174,11 +187,36 @@ export default function Index() {
           </TouchableOpacity>
         </View>
       </View>
+      <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 8, gap: 8 }}>
+        {([
+          { key: 'all', label: 'All' },
+          { key: 'active', label: 'Active' },
+          { key: 'done', label: 'Done' },
+        ] as const).map((f) => {
+          const selected = filter === f.key;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              onPress={() => setFilter(f.key)}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 999,
+                backgroundColor: selected ? colors.primary : colors.surface,
+                borderWidth: 1,
+                borderColor: selected ? colors.primary : colors.border,
+              }}
+            >
+              <Text style={{ color: selected ? '#fff' : colors.text, fontWeight: '600' }}>{f.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       {/* List */}
-      {todos && todos.length > 0 ? (
+      {filteredTodos && filteredTodos.length > 0 ? (
         <FlatList
-          data={todos}
+          data={filteredTodos}
           keyExtractor={(item) => String(item._id)}
           contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
@@ -186,7 +224,10 @@ export default function Index() {
             <Swipeable
               renderRightActions={() => (
                 <TouchableOpacity
-                  onPress={() => deleteTodo({ id: item._id })}
+                  onPress={async () => {
+                    await deleteTodo({ id: item._id });
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  }}
                   activeOpacity={0.9}
                   style={{
                     width: 96,
@@ -203,7 +244,10 @@ export default function Index() {
               )}
             >
               <TouchableOpacity
-                onPress={() => toggleTodo({ id: item._id })}
+                onPress={async () => {
+                  await toggleTodo({ id: item._id });
+                  Haptics.selectionAsync();
+                }}
                 activeOpacity={0.9}
                 style={{
                   backgroundColor: colors.surface,
@@ -252,6 +296,18 @@ export default function Index() {
           <Text style={{ color: colors.textMuted, marginTop: 12, fontSize: 16 }}>
             No tasks yet. Add your first one!
           </Text>
+          <TouchableOpacity
+            onPress={() => inputRef.current?.focus()}
+            style={{
+              marginTop: 14,
+              backgroundColor: colors.primary,
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              borderRadius: 12,
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '600' }}>Add a task</Text>
+          </TouchableOpacity>
         </View>
       )}
     </SafeAreaView>

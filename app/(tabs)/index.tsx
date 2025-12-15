@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo, useState } from "react";
 import { Alert, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
+import { Swipeable, RectButton } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";
@@ -235,22 +235,21 @@ export default function Index() {
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           renderItem={({ item }) => (
             <Swipeable
+              overshootRight={false}
               renderRightActions={() => (
-                <TouchableOpacity
-                  onPress={() => confirmDelete(item._id)}
-                  activeOpacity={0.9}
+                <RectButton
+                  onPress={() => deleteTodo({ id: item._id })}
                   style={{
                     width: 96,
+                    height: '100%',
                     justifyContent: "center",
                     alignItems: "center",
                     backgroundColor: colors.danger,
-                    borderRadius: 16,
-                    marginLeft: 8,
                   }}
                 >
                   <Feather name="trash-2" size={20} color="#fff" />
                   <Text style={{ color: "#fff", marginTop: 4 }}>Delete</Text>
-                </TouchableOpacity>
+                </RectButton>
               )}
             >
               <TouchableOpacity

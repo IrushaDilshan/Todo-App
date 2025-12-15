@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";
 
@@ -21,6 +22,7 @@ export default function Index() {
   const addTodo = useMutation(api.todos.addTodo);
   const toggleTodo = useMutation(api.todos.toggleTodo);
   const clearTodos = useMutation(api.todos.clearAllTodos);
+  const deleteTodo = useMutation(api.todos.deleteTodo);
 
   const [newText, setNewText] = useState("");
 
@@ -181,40 +183,60 @@ export default function Index() {
           contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => toggleTodo({ id: item._id })}
-              activeOpacity={0.9}
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: colors.border,
-                padding: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.06,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 3 },
-                elevation: 2,
-              }}
+            <Swipeable
+              renderRightActions={() => (
+                <TouchableOpacity
+                  onPress={() => deleteTodo({ id: item._id })}
+                  activeOpacity={0.9}
+                  style={{
+                    width: 96,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: colors.danger,
+                    borderRadius: 16,
+                    marginLeft: 8,
+                  }}
+                >
+                  <Feather name="trash-2" size={20} color="#fff" />
+                  <Text style={{ color: "#fff", marginTop: 4 }}>Delete</Text>
+                </TouchableOpacity>
+              )}
             >
-              <Feather
-                name={item.isCompleted ? "check-circle" : "circle"}
-                size={22}
-                color={item.isCompleted ? colors.success : colors.textMuted}
-              />
-              <Text
+              <TouchableOpacity
+                onPress={() => toggleTodo({ id: item._id })}
+                activeOpacity={0.9}
                 style={{
-                  marginLeft: 12,
-                  color: item.isCompleted ? colors.textMuted : colors.text,
-                  textDecorationLine: item.isCompleted ? "line-through" : "none",
-                  fontSize: 16,
+                  backgroundColor: colors.surface,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  padding: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  shadowColor: colors.shadow,
+                  shadowOpacity: 0.06,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 3 },
+                  elevation: 2,
                 }}
               >
-                {item.text}
-              </Text>
-            </TouchableOpacity>
+                <Feather
+                  name={item.isCompleted ? "check-circle" : "circle"}
+                  size={22}
+                  color={item.isCompleted ? colors.success : colors.textMuted}
+                />
+                <Text
+                  style={{
+                    marginLeft: 12,
+                    color: item.isCompleted ? colors.textMuted : colors.text,
+                    textDecorationLine: item.isCompleted ? "line-through" : "none",
+                    fontSize: 16,
+                  }}
+                >
+                  {item.text}
+                </Text>
+              </TouchableOpacity>
+            </Swipeable>
           )}
         />
       ) : (

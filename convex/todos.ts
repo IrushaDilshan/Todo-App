@@ -42,6 +42,14 @@ export const updateTodo = mutation({
   },
 });
 
+export const deleteTodo = mutation({
+  args: { id: v.id("todos") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+    return args.id;
+  },
+});
+
 // ...existing code...
 export const clearAllTodos = mutation({
   handler: async (ctx) => {

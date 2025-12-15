@@ -2,8 +2,8 @@ import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo, useState } from "react";
 import { Alert, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Swipeable } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";
 
@@ -81,10 +81,10 @@ export default function Index() {
     setEditText("");
   };
 
-  const confirmDelete = (id: string) => {
+  const confirmDelete = (id: any) => {
     Alert.alert("Delete todo?", "This cannot be undone.", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteTodo({ id: id as any }) },
+      { text: "Delete", style: "destructive", onPress: () => deleteTodo({ id }) },
     ]);
   };
 
@@ -237,7 +237,7 @@ export default function Index() {
             <Swipeable
               renderRightActions={() => (
                 <TouchableOpacity
-                  onPress={() => confirmDelete(String(item._id))}
+                  onPress={() => confirmDelete(item._id)}
                   activeOpacity={0.9}
                   style={{
                     width: 96,

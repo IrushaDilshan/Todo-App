@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo, useState } from "react";
 import { Alert, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { Swipeable, RectButton } from "react-native-gesture-handler";
+import { RectButton, Swipeable } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";

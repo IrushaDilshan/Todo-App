@@ -1,15 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  SafeAreaView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Swipeable } from "react-native-gesture-handler";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";
@@ -96,7 +89,7 @@ export default function Index() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={["top", "bottom", "left", "right"]}>
       {/* Header */}
       <View
         style={{

@@ -1,15 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
 import Constants from "expo-constants";
-import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Alert, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import useTheme from "../../app-example/hooks/useTheme";
 import { api } from "../../convex/_generated/api";
 
@@ -39,7 +32,7 @@ const SettingsScreen = () => {
   const version = Constants.expoConfig?.version ?? "";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={["top", "bottom", "left", "right"]}>
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         bounces
